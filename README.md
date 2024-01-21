@@ -28,7 +28,7 @@ Infine, è necessario navigare all'interno della cartella principale della repos
 docker-compose up
 ```
 
-per eseguire il progetto.
+per far partire l'applicazione.
 
 La web app sarà disponibile su `localhost:3000`.
 
