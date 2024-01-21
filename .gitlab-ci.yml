@@ -1,0 +1,33 @@
+variables:
+  DOCKER_HOST: tcp://docker:2375/
+  DOCKER_DRIVER: overlay2
+
+# Official docker compose image.
+image:
+  name: docker/compose:latest
+
+services:
+  - docker:dind
+
+before_script:
+  - chmod 700 backend/wait-for-it.sh
+
+stages:
+  - tests
+
+tests:
+  stage: tests
+  script:
+    # Setting up the environment
+    - docker-compose build
+    - nohup sh -c "docker-compose up >/dev/null 2>&1 &" 
+    - docker run --rm --net host -t -v "$(pwd)":/script bash bash -c \
+          "./script/backend/wait-for-it.sh -t 100 127.0.0.1:8000 -- echo 'Server started'"
+         
+    # Selenium tests
+    - docker build -t weekplanner_tests:1.0 tests
+    - docker run --rm --net host -t weekplanner_tests:1.0 bash -c ./run-tests.sh
+
+    # Django tests
+    - docker exec -t labprog_django_1 python manage.py test
+    

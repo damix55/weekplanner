@@ -1,0 +1,51 @@
+version: "3.2"
+services:
+  react:
+    depends_on: 
+    - django
+    build: ./frontend
+    ports:
+    - 3000:3000
+    networks:
+    - net
+    volumes:
+      - ./frontend/public:/app/public
+      - ./frontend/src:/app/src
+    command: ['npm', 'start']
+    environment:
+    - CHOKIDAR_USEPOLLING=true 
+
+  django:
+    depends_on:
+    - db
+    build: ./backend
+    ports:
+    - 8000:8000
+    networks:
+    - net
+    env_file:
+     - ./django.env
+     - ./mysql.env
+    volumes:
+      - ./backend:/app
+    command: bash -c './wait-for-it.sh -t 0 db:3306 -- bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"'
+
+  db:
+    image: mysql:8.0.23
+    restart: always
+    ports:
+    - 3306:3306
+    networks:
+    - net
+    command: mysqld --default-authentication-plugin=mysql_native_password
+    env_file:
+    - ./mysql.env
+    volumes:
+    - data:/var/lib/mysql
+
+networks:
+  net:
+    driver: bridge
+
+volumes:
+  data:
